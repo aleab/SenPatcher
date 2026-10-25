@@ -1243,6 +1243,7 @@ if (SENPATCHER_BUILD_CS1HOOK)
 		sen1/exe_patch_show_mouse_cursor.cpp
 		sen1/exe_patch_thor_mq_string.cpp
 		sen1/exe_patch_turbo_mode.cpp
+		sen1/exe_patch_map_controls.cpp
 		sen1/exe_patch_fishing.cpp
 		sen1/inject_modloader.h
 		sen1/inject_modloader.cpp
