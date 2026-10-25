@@ -52,4 +52,6 @@ void PatchForce0Kerning(PatchExecData& execData);
 void PatchForceXInput(PatchExecData& execData);
 void PatchMusicQueueing(PatchExecData& execData);
 void PatchAddCameraSensitivity(PatchExecData& execData, int sensitivity);
+
+void PatchFishing(PatchExecData& execData, bool adjustTimersForTurbo);
 } // namespace SenLib::Sen1

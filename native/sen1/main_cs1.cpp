@@ -708,6 +708,9 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
         Align16CodePage(logger, patchExecData.Codespace);
     }
 
+    SenLib::Sen1::PatchFishing(patchExecData, adjustTimersForTurbo);
+    Align16CodePage(logger, patchExecData.Codespace);
+
     // mark newly allocated page as executable
     {
         DWORD tmpdword;
