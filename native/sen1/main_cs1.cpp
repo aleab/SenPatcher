@@ -734,6 +734,9 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
         Align16CodePage(logger, patchExecData.Codespace);
     }
 
+    PatchFieldCamera(patchExecData, adjustTimersForTurbo);
+    Align16CodePage(logger, patchExecData.Codespace);
+
     SenLib::Sen1::PatchMapControls(patchExecData,
                                    invertMapCameraYAxis,
                                    mapCameraMinTiltDeg,
