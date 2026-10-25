@@ -54,6 +54,12 @@ void PatchMusicQueueing(PatchExecData& execData);
 void PatchAddCameraSensitivity(PatchExecData& execData, int sensitivity);
 
 void PatchFieldCamera(PatchExecData& execData, bool adjustTimersForTurbo);
+void PatchBattleCamera(PatchExecData& execData,
+                       bool disableBattleCameraIdleRotation,
+                       bool disableBattleCameraTiltReset,
+                       float pointerSpeedFactor1,
+                       float pointerSpeedFactor2,
+                       bool adjustTimersForTurbo);
 void PatchMapControls(PatchExecData& execData,
                       bool invertMapCameraYAxis,
                       float mapCameraMinTiltDeg,

@@ -547,6 +547,10 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     int turboModeButton = 7;
     bool fixBgmEnqueue = true;
     int cameraSensitivity = 3;
+    bool disableBattleCameraIdleRotation = true;
+    bool disableBattleCameraTiltReset = true;
+    float battlePointerSpeedFactor1 = 1.5f;
+    float battlePointerSpeedFactor2 = 0.8f;
     bool invertMapCameraYAxis = true;
     float mapCameraMinTiltDeg = 30.0f;
 
@@ -641,6 +645,10 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
                 check_integer("CS1", "TurboModeButton", turboModeButton);
                 check_boolean("CS1", "FixBgmEnqueue", fixBgmEnqueue);
                 check_integer("CS1", "CameraSensitivity", cameraSensitivity);
+                check_boolean("CS1", "Battle_Camera_DisableIdleRotation", disableBattleCameraIdleRotation);
+                check_boolean("CS1", "Battle_Camera_DisableTiltReset", disableBattleCameraTiltReset);
+                check_float("CS1", "Battle_PointerSpeed1", battlePointerSpeedFactor1);
+                check_float("CS1", "Battle_PointerSpeed2", battlePointerSpeedFactor2);
                 check_boolean("CS1", "Map_Camera_InvertYAxis", invertMapCameraYAxis);
                 check_float("CS1", "Map_Camera_MinTiltDegrees", mapCameraMinTiltDeg);
             }
@@ -735,6 +743,14 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     }
 
     PatchFieldCamera(patchExecData, adjustTimersForTurbo);
+    Align16CodePage(logger, patchExecData.Codespace);
+
+    SenLib::Sen1::PatchBattleCamera(patchExecData,
+                                    disableBattleCameraIdleRotation,
+                                    disableBattleCameraTiltReset,
+                                    battlePointerSpeedFactor1,
+                                    battlePointerSpeedFactor2,
+                                    adjustTimersForTurbo);
     Align16CodePage(logger, patchExecData.Codespace);
 
     SenLib::Sen1::PatchMapControls(patchExecData,
