@@ -30,10 +30,10 @@ void PatchFieldCamera(PatchExecData& execData, bool adjustTimersForTurbo) {
         //      fstp    dword ptr [esp+28h+var_24+4]    D9 5C 24 08
         const auto inject = InjectJumpIntoCode<6, PaddingInstruction::Nop>(logger, addressInjectPos, codespace);
 
-        WriteInstruction16(codespace, 0x8d0d); // lea ecx,dword ptr[&RealTimeStep]
+        WriteInstruction16(codespace, 0x8d05); // lea eax,dword ptr[&RealTimeStep]
         std::memcpy(codespace, &addrRealTimeStep, 4);
         codespace += 4;
-        WriteInstruction16(codespace, 0xd901); // fld dword ptr[ecx]
+        WriteInstruction16(codespace, 0xd900); // fld dword ptr[eax]
 
         std::memcpy(codespace,
                     inject.OverwrittenInstructions.data() + 3,
