@@ -55,4 +55,6 @@ void PatchForce0Kerning(PatchExecData& execData);
 void PatchAddNullCheckBattleScopeCrashMaybe(PatchExecData& execData);
 void PatchForceXInput(PatchExecData& execData);
 void PatchAddCameraSensitivity(PatchExecData& execData, int sensitivity);
+
+void PatchFieldCamera(PatchExecData& execData, bool adjustTimersForTurbo);
 } // namespace SenLib::Sen2

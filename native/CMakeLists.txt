@@ -1338,6 +1338,7 @@ if (SENPATCHER_BUILD_CS2HOOK)
 		sen2/exe_patch_remove_debug_leftovers.cpp
 		sen2/exe_patch_show_mouse_cursor.cpp
 		sen2/exe_patch_turbo_mode.cpp
+		sen2/exe_patch_camera_field.cpp
 		sen2/inject_modloader.h
 		sen2/inject_modloader.cpp
 

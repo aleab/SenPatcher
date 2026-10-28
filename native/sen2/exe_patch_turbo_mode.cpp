@@ -15,7 +15,7 @@
 namespace SenLib::Sen2 {
 static char TurboActive = 0;
 static char TurboButtonPressedLastFrame = 0;
-static float RealTimeStep = 0.0f;
+float RealTimeStep = 0.0f;
 static float TempStoreMul = 0.0f;
 
 void PatchTurboMode(PatchExecData& execData,
