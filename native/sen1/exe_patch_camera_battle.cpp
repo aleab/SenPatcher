@@ -31,9 +31,12 @@ void PatchBattleCamera(PatchExecData& execData,
     const float* const addrRealTimeStep = &RealTimeStep;
     const float* const addrPointerSpeed = &PointerSpeed;
 
-    const uint32_t addrGetInputSettings = version == GameVersion::Japanese ? 0x40C6AD : 0x40C6C6;
-    const uint32_t addrGetMouseSensitivity = version == GameVersion::Japanese ? 0x40BDCF : 0x40BDE8;
-    const uint32_t addrIsButtonPressed = version == GameVersion::Japanese ? 0x40DB5C : 0x40DB7A;
+    const uint32_t addrGetInputSettings =
+        reinterpret_cast<uint32_t>(GetCodeAddressJpEn(version, textRegion, 0x40C6AD, 0x40C6C6));
+    const uint32_t addrGetMouseSensitivity =
+        reinterpret_cast<uint32_t>(GetCodeAddressJpEn(version, textRegion, 0x40BDCF, 0x40BDE8));
+    const uint32_t addrIsButtonPressed =
+        reinterpret_cast<uint32_t>(GetCodeAddressJpEn(version, textRegion, 0x40DB5C, 0x40DB7A));
 
     // disable idle rotation
     if (disableBattleCameraIdleRotation) {

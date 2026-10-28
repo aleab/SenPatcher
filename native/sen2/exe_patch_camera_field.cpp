@@ -20,8 +20,10 @@ void PatchFieldCamera(PatchExecData& execData, bool adjustTimersForTurbo) {
 
     const float* const addrRealTimeStep = &RealTimeStep;
 
-    const uint32_t addrGetSettings = version == GameVersion::Japanese ? 0x6CF5B0 : 0x6D0520;
-    const uint32_t addrGetDisableCamAutoCenter = version == GameVersion::Japanese ? 0x6CF4D0 : 0x6D0440;
+    const uint32_t addrGetSettings =
+        reinterpret_cast<uint32_t>(GetCodeAddressJpEn(version, textRegion, 0x6CF5B0, 0x6D0520));
+    const uint32_t addrGetDisableCamAutoCenter =
+        reinterpret_cast<uint32_t>(GetCodeAddressJpEn(version, textRegion, 0x6CF4D0, 0x6D0440));
 
     // disable horizontal camera auto-centering
     {
