@@ -557,6 +557,8 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     bool forceXInput = false;
     bool fixBattleScopeCrash = true;
     int cameraSensitivity = 3;
+    bool invertMapCameraYAxis = true;
+    float mapCameraMinTiltDeg = 30.0f;
 
     {
         std::string settingsFilePath;
@@ -612,6 +614,28 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
                             }
                         }
                     };
+                const auto check_float =
+                    [&](std::string_view section, std::string_view key, float& f) {
+                        const auto* kvp = ini.FindValue(section, key);
+                        if (kvp) {
+                            float fval = 0;
+                            const auto [_, ec] = std::from_chars(
+                                kvp->Value.data(), kvp->Value.data() + kvp->Value.size(), fval);
+                            if (ec == std::errc()) {
+                                logger.Log("Value ");
+                                logger.Log(key);
+                                logger.Log(" set to ");
+                                logger.LogFloat(fval);
+                                logger.Log(".\n");
+                                f = fval;
+                            } else {
+                                logger.Log("Value ");
+                                logger.Log(key);
+                                logger.Log(" not found in ini, leaving default.\n");
+                            }
+                        }
+                    };
+
                 check_boolean("CS2", "AssetFixes", assetFixes);
                 check_boolean("CS2", "RemoveTurboSkip", removeTurboSkip);
                 check_boolean("CS2", "MakeTurboToggle", makeTurboToggle);
@@ -628,6 +652,8 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
                 check_boolean("CS2", "ForceXInput", forceXInput);
                 check_boolean("CS2", "FixBattleScopeCrash", fixBattleScopeCrash);
                 check_integer("CS2", "CameraSensitivity", cameraSensitivity);
+                check_boolean("CS2", "Map_Camera_InvertYAxis", invertMapCameraYAxis);
+                check_float("CS2", "Map_Camera_MinTiltDegrees", mapCameraMinTiltDeg);
             }
         }
     }
@@ -732,6 +758,9 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     }
 
     SenLib::Sen2::PatchFieldCamera(patchExecData, adjustTimersForTurbo);
+    Align16CodePage(logger, patchExecData.Codespace);
+
+    SenLib::Sen2::PatchMapControls(patchExecData, invertMapCameraYAxis, mapCameraMinTiltDeg, adjustTimersForTurbo);
     Align16CodePage(logger, patchExecData.Codespace);
 
     // mark newly allocated page as executable

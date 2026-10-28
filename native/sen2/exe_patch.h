@@ -57,4 +57,8 @@ void PatchForceXInput(PatchExecData& execData);
 void PatchAddCameraSensitivity(PatchExecData& execData, int sensitivity);
 
 void PatchFieldCamera(PatchExecData& execData, bool adjustTimersForTurbo);
+void PatchMapControls(PatchExecData& execData,
+                      bool invertMapCameraYAxis,
+                      float mapCameraMinTiltDeg,
+                      bool adjustTimersForTurbo);
 } // namespace SenLib::Sen2
