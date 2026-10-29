@@ -557,6 +557,10 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     bool forceXInput = false;
     bool fixBattleScopeCrash = true;
     int cameraSensitivity = 3;
+    bool disableBattleCameraIdleRotation = true;
+    bool disableBattleCameraTiltReset = true;
+    float battlePointerSpeedFactor1 = 1.5f;
+    float battlePointerSpeedFactor2 = 0.8f;
     bool invertMapCameraYAxis = true;
     float mapCameraMinTiltDeg = 30.0f;
 
@@ -652,6 +656,10 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
                 check_boolean("CS2", "ForceXInput", forceXInput);
                 check_boolean("CS2", "FixBattleScopeCrash", fixBattleScopeCrash);
                 check_integer("CS2", "CameraSensitivity", cameraSensitivity);
+                check_boolean("CS2", "Battle_Camera_DisableIdleRotation", disableBattleCameraIdleRotation);
+                check_boolean("CS2", "Battle_Camera_DisableTiltReset", disableBattleCameraTiltReset);
+                check_float("CS2", "Battle_PointerSpeed1", battlePointerSpeedFactor1);
+                check_float("CS2", "Battle_PointerSpeed2", battlePointerSpeedFactor2);
                 check_boolean("CS2", "Map_Camera_InvertYAxis", invertMapCameraYAxis);
                 check_float("CS2", "Map_Camera_MinTiltDegrees", mapCameraMinTiltDeg);
             }
@@ -758,6 +766,14 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     }
 
     SenLib::Sen2::PatchFieldCamera(patchExecData, adjustTimersForTurbo);
+    Align16CodePage(logger, patchExecData.Codespace);
+
+    SenLib::Sen2::PatchBattleCamera(patchExecData,
+                                    disableBattleCameraIdleRotation,
+                                    disableBattleCameraTiltReset,
+                                    battlePointerSpeedFactor1,
+                                    battlePointerSpeedFactor2,
+                                    adjustTimersForTurbo);
     Align16CodePage(logger, patchExecData.Codespace);
 
     SenLib::Sen2::PatchMapControls(patchExecData, invertMapCameraYAxis, mapCameraMinTiltDeg, adjustTimersForTurbo);

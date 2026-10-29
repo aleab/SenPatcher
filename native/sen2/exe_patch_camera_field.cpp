@@ -53,7 +53,7 @@ void PatchFieldCamera(PatchExecData& execData, bool adjustTimersForTurbo) {
         std::memcpy(codespace,
                     inject.OverwrittenInstructions.data(),
                     inject.OverwrittenInstructions.size());
-        codespace += (inject.OverwrittenInstructions.size());
+        codespace += inject.OverwrittenInstructions.size();
         jmpBack.WriteJump(codespace, JC::JMP);
 
         execData.Codespace = codespace;
@@ -72,9 +72,7 @@ void PatchFieldCamera(PatchExecData& execData, bool adjustTimersForTurbo) {
         //      movss   [esp+8h], xmm0      F3 0F 11 44 24 08
         const auto inject = InjectJumpIntoCode<5>(logger, addressInjectPos, codespace);
 
-        WriteInstruction32(codespace, 0xf30f1005);      // movss xmm0,dword ptr[&RealTimeStep]
-        std::memcpy(codespace, &addrRealTimeStep, 4);
-        codespace += 4;
+        Emit_MOVSS_XMM_DwordPtr(codespace, XMM::XMM0, addrRealTimeStep);
 
         BranchHelper4Byte jmpBack;
         jmpBack.SetTarget(inject.JumpBackAddress);
