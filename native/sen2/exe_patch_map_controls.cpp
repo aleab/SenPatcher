@@ -164,5 +164,16 @@ void PatchMapControls(PatchExecData& execData,
 
         execData.Codespace = codespace;
     }
+
+    // fix default tilt to 45deg
+    {
+        // Inject pos:
+        // ->#  mov     dword ptr [edi+2ACh], 41F00000h     C7 87 AC 02 00 00 00 00 F0 41   30.0f
+        char* address = GetCodeAddressJpEn(version, textRegion, 0x5BD7AC, 0x5BD6DC) + 6;
+
+        const uint32_t uDefaultTiltDeg = std::bit_cast<uint32_t>(45.0f);
+        PageUnprotect page(logger, address, 4);
+        WriteInstruction32(address, BSWAP32(uDefaultTiltDeg));
+    }
 }
 }
