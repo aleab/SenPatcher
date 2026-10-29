@@ -67,4 +67,5 @@ void PatchMapControls(PatchExecData& execData,
                       bool invertMapCameraYAxis,
                       float mapCameraMinTiltDeg,
                       bool adjustTimersForTurbo);
+void PatchFishing(PatchExecData& execData, bool adjustTimersForTurbo);
 } // namespace SenLib::Sen2

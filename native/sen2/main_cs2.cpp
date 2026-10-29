@@ -779,6 +779,9 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     SenLib::Sen2::PatchMapControls(patchExecData, invertMapCameraYAxis, mapCameraMinTiltDeg, adjustTimersForTurbo);
     Align16CodePage(logger, patchExecData.Codespace);
 
+    SenLib::Sen2::PatchFishing(patchExecData, adjustTimersForTurbo);
+    Align16CodePage(logger, patchExecData.Codespace);
+
     // mark newly allocated page as executable
     {
         DWORD tmpdword;
