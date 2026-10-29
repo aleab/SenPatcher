@@ -12,6 +12,7 @@
 namespace SenLib::Sen2 {
 extern float RealTimeStep;
 
+static char BattleStarted = 0;
 static float PointerSpeed = 0;
 
 void PatchBattleCamera(PatchExecData& execData,
@@ -53,31 +54,72 @@ void PatchBattleCamera(PatchExecData& execData,
 
     // disable pitch/tilt reset
     if (disableBattleCameraTiltReset) {
+        char* codespace = execData.Codespace;
+        char* const addressInjectPos = GetCodeAddressJpEn(version, textRegion, 0x4C3F95, 0x4C4255);
+
+        // Inject pos:
+        //      mov     dword ptr [esi+0E4h], 40A00000h     C7 86 E4 00 00 00 00 00 A0 40       min camera distance
+        //      mov     dword ptr [esi+0E8h], 41A00000h     C7 86 E8 00 00 00 00 00 A0 41       max camera distance
+        //      ...
+        //      mov     dword ptr [esi+0F4h], 0             C7 86 F4 00 00 00 00 00 00 00
+        // ->#  mov     dword ptr [esi+0F8h], 0             C7 86 F8 00 00 00 00 00 00 00       default SM state
+        //      mov     byte ptr [esi+0FCh], 0              C6 86 FC 00 00 00 00
+        const auto inject = InjectJumpIntoCode<10, PaddingInstruction::Nop>(logger, addressInjectPos, codespace);
+
+        // The subroutine at 0x4C40A0 (en) seems to reset a bunch of variables related to the
+        // battle camera to their default values and it's called at the start of every battle.
+
+        Emit_MOV_R8_IMM8(codespace, R8::AL, 0);
+        Emit_MOV_BytePtr_R8(codespace, &BattleStarted, R8::AL);
+
+        std::memcpy(codespace,
+                    inject.OverwrittenInstructions.data(),
+                    inject.OverwrittenInstructions.size());
+        codespace += inject.OverwrittenInstructions.size();
+
+        BranchHelper4Byte jmpBack;
+        jmpBack.SetTarget(inject.JumpBackAddress);
+        jmpBack.WriteJump(codespace, JC::JMP);
+
+        execData.Codespace = codespace;
+    }
+    if (disableBattleCameraTiltReset) {
+        char* codespace = execData.Codespace;
+        char* const addressInjectPos = GetCodeAddressJpEn(version, textRegion, 0x4C68B1, 0x4C6B71);
+
         // Inject pos:
         // ->#  movss   xmm0, [ebp+8h]          F3 0F 10 45 08
-        //   #  push    1                       6A 01
-        //   #  ...
-        //   #  movss   [esp+10h], xmm0         F3 0F 11 44 24 10
-        //   #  movq    xmm0, [ebp-0BCh]        F3 0F 7E 85 44 FF FF FF
-        //   #  movq    qword ptr [eax], xmm0   66 0F D6 00
-        //   #  ...
-        //   #  call    setCameraRotation       E8 ?? ?? ?? ??
-        //
-        char* addressInjectPos = GetCodeAddressJpEn(version, textRegion, 0x4C68B1, 0x4C6B71);
-        size_t length = 50;
+        //      push    1                       6A 01
+        //      ...
+        //      movss   [esp+10h], xmm0         F3 0F 11 44 24 10
+        //      movq    xmm0, [ebp-0BCh]        F3 0F 7E 85 44 FF FF FF
+        //      movq    qword ptr [eax], xmm0   66 0F D6 00
+        //      ...
+        //      call    setCameraRotation       E8 ?? ?? ?? ??
+        const auto inject = InjectJumpIntoCode<5>(logger, addressInjectPos, codespace);
 
-        PageUnprotect page(logger, addressInjectPos, length);
+        BranchHelper4Byte jmpBack, jSkip;
+        jmpBack.SetTarget(inject.JumpBackAddress);
+        jSkip.SetTarget(addressInjectPos + 50);
 
-        BranchHelper4Byte jmp;
-        jmp.SetTarget(addressInjectPos + length);
-        jmp.WriteJump(addressInjectPos, JC::JMP);
+        // SM state == 3: battle start / camera reset (?)
+        //    Skip the setCameraRotation call, but not if this is the first time in this
+        //    battle that the SM enters this state.
 
-        for (size_t i = 5; i < length; ++i) {
-            *addressInjectPos++ = static_cast<char>(0x90);
-        }
+        Emit_MOV_R8_BytePtr(codespace, R8::AL, &BattleStarted);
+        Emit_TEST_R8_R8(codespace, R8::AL, R8::AL);
+        jSkip.WriteJump(codespace, JC::JNZ);
+
+        Emit_MOV_R8_IMM8(codespace, R8::AL, 1);
+        Emit_MOV_BytePtr_R8(codespace, &BattleStarted, R8::AL);
+        std::memcpy(codespace,
+                    inject.OverwrittenInstructions.data(),
+                    inject.OverwrittenInstructions.size());
+        codespace += inject.OverwrittenInstructions.size();
+        jmpBack.WriteJump(codespace, JC::JMP);
+
+        execData.Codespace = codespace;
     }
-
-    // disable pitch/tilt reset (on enemy turn)
     if (disableBattleCameraTiltReset) {
         // Inject pos:
         // ->#  movss   xmm0, [ebp+8h]          F3 0F 10 45 08
@@ -88,9 +130,11 @@ void PatchBattleCamera(PatchExecData& execData,
         //   #  movq    qword ptr [eax], xmm0   66 0F D6 00
         //   #  ...
         //   #  call    setCameraRotation       E8 ?? ?? ?? ??
-        //
         char* addressInjectPos = GetCodeAddressJpEn(version, textRegion, 0x4C752B, 0x4C77B9);
         size_t length = 50;
+
+        // SM state == 13: npc turn (?)
+        //    Always skip the setCameraRotation call.
 
         PageUnprotect page(logger, addressInjectPos, length);
 
@@ -184,7 +228,7 @@ void PatchBattleCamera(PatchExecData& execData,
                 WriteInstruction40(codespace, 0xe800000000 | BSWAP32(offset));                      // call isButtonPressed
                 WriteInstruction16(codespace, 0x84c0);                                              // test al, al
 
-                BranchHelper4Byte j0, j1;
+                BranchHelper1Byte j0, j1;
                 j0.WriteJump(codespace, JC::JZ);
                 Emit_MOVSS_XMM_DwordPtr(codespace, XMM::XMM1, addrPointerSpeedFactor2);
                 j1.WriteJump(codespace, JC::JMP);
