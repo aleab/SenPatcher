@@ -16,6 +16,7 @@ extern float RealTimeStep;
 void PatchMapControls(PatchExecData& execData,
                       bool invertMapCameraYAxis,
                       float mapCameraMinTiltDeg,
+                      float defaultMapZoomLevel,
                       bool adjustTimersForTurbo) {
     HyoutaUtils::Logger& logger = *execData.Logger;
     char* textRegion = execData.TextRegion;
@@ -174,6 +175,18 @@ void PatchMapControls(PatchExecData& execData,
         const uint32_t uDefaultTiltDeg = std::bit_cast<uint32_t>(45.0f);
         PageUnprotect page(logger, address, 4);
         WriteInstruction32(address, BSWAP32(uDefaultTiltDeg));
+    }
+
+    // change default zoom level
+    defaultMapZoomLevel = std::clamp(fabsf(defaultMapZoomLevel), 0.5f, 2.5f);
+    if (defaultMapZoomLevel != 1.0f) {
+        // Inject pos:
+        // ->#  mov     dword ptr [edi+2B4h], 3F800000h     C7 87 B4 02 00 00 00 00 80 3F   1.0f
+        char* address = GetCodeAddressJpEn(version, textRegion, 0x5BD95A, 0x5BD88A) + 6;
+
+        const uint32_t uDefaultZoomLevel = std::bit_cast<uint32_t>(defaultMapZoomLevel);
+        PageUnprotect page(logger, address, 4);
+        WriteInstruction32(address, BSWAP32(uDefaultZoomLevel));
     }
 }
 }
