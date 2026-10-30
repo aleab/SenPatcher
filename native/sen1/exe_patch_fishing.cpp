@@ -1,10 +1,7 @@
 #include "exe_patch.h"
 
-#include <cassert>
-
 #include "x86/emitter.h"
 #include "x86/inject_jump_into.h"
-#include "x86/page_unprotect.h"
 
 namespace SenLib::Sen1 {
 extern float RealTimeStep;

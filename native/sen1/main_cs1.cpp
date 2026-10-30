@@ -553,6 +553,7 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     float battlePointerSpeedFactor2 = 0.8f;
     bool invertMapCameraYAxis = true;
     float mapCameraMinTiltDeg = 30.0f;
+    float defaultMapZoomLevel = 1.25f;
 
     {
         std::string settingsFilePath;
@@ -651,6 +652,7 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
                 check_float("CS1", "Battle_PointerSpeed2", battlePointerSpeedFactor2);
                 check_boolean("CS1", "Map_Camera_InvertYAxis", invertMapCameraYAxis);
                 check_float("CS1", "Map_Camera_MinTiltDegrees", mapCameraMinTiltDeg);
+                check_float("CS1", "Map_Camera_DefaultZoomLevel", defaultMapZoomLevel);
             }
         }
     }
@@ -756,6 +758,7 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     SenLib::Sen1::PatchMapControls(patchExecData,
                                    invertMapCameraYAxis,
                                    mapCameraMinTiltDeg,
+                                   defaultMapZoomLevel,
                                    adjustTimersForTurbo);
     Align16CodePage(logger, patchExecData.Codespace);
 

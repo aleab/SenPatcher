@@ -1,10 +1,9 @@
 #include "exe_patch.h"
 
-#include <cassert>
 #include <algorithm>
+#include <bit>
 
 #include "util/bit.h"
-#include "util/memread.h"
 #include "util/memwrite.h"
 #include "x86/emitter.h"
 #include "x86/inject_jump_into.h"

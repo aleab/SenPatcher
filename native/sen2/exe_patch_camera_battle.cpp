@@ -1,9 +1,8 @@
 #include "exe_patch.h"
 
-#include <cassert>
+#include <bit>
 
 #include "util/bit.h"
-#include "util/memread.h"
 #include "util/memwrite.h"
 #include "x86/emitter.h"
 #include "x86/inject_jump_into.h"
@@ -13,7 +12,7 @@ namespace SenLib::Sen2 {
 extern float RealTimeStep;
 
 static char BattleStarted = 0;
-static float PointerSpeed = 0;
+static float PointerSpeed = 1.0f;
 
 void PatchBattleCamera(PatchExecData& execData,
                        bool disableBattleCameraIdleRotation,
@@ -102,7 +101,7 @@ void PatchBattleCamera(PatchExecData& execData,
         jmpBack.SetTarget(inject.JumpBackAddress);
         jSkip.SetTarget(addressInjectPos + 50);
 
-        // SM state == 3: battle start / camera reset (?)
+        // SM state == 3: battle start / camera reset (?) / player turn (?)
         //    Skip the setCameraRotation call, but not if this is the first time in this
         //    battle that the SM enters this state.
 
@@ -161,17 +160,10 @@ void PatchBattleCamera(PatchExecData& execData,
         //   #  push    ecx                     51
         //      mov     ecx, edi                8B CF
         //      movss   [esp], xmm0             F3 0F 11 04 24
-        //      call    sub_40D29C              E8 ?? ?? ?? ??
+        //      call    sub_4C7E20              E8 ?? ?? ?? ??
         const auto inject = InjectJumpIntoCode<6, PaddingInstruction::Nop>(logger, addressInjectPos, codespace);
 
         // use (GetMouseSensitivity() * sensitivityMult * RealTimeStep) instead of scaled timestep
-
-        if (adjustTimersForTurbo) {
-            Emit_MOVSS_XMM_DwordPtr(codespace, XMM::XMM0, addrRealTimeStep);
-        } else {
-            std::memcpy(codespace, inject.OverwrittenInstructions.data(), 5);
-            codespace += 5;
-        }
 
         const uint32_t offGetInputSettings = addrGetInputSettings - reinterpret_cast<uint32_t>(codespace + 5);
         WriteInstruction40(codespace, 0xe800000000 | BSWAP32(offGetInputSettings));     // call     getInputSettings

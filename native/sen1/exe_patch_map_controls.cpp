@@ -1,10 +1,9 @@
 #include "exe_patch.h"
 
-#include <cassert>
 #include <algorithm>
 #include <bit>
 
-#include "util/memread.h"
+#include "util/bit.h"
 #include "util/memwrite.h"
 #include "x86/emitter.h"
 #include "x86/inject_jump_into.h"
@@ -16,6 +15,7 @@ extern float RealTimeStep;
 void PatchMapControls(PatchExecData& execData,
                       bool invertMapCameraYAxis,
                       float mapCameraMinTiltDeg,
+                      float defaultMapZoomLevel,
                       bool adjustTimersForTurbo) {
     HyoutaUtils::Logger& logger = *execData.Logger;
     char* textRegion = execData.TextRegion;
@@ -48,12 +48,8 @@ void PatchMapControls(PatchExecData& execData,
             WriteInstruction16(codespace, 0xd9e0);              // fchs
 
         if (adjustTimersForTurbo) {
-            WriteInstruction16(codespace, 0xd905);              // fld dword ptr[&CameraRotationFactor]
-            std::memcpy(codespace, &addrCameraRotationFactor, 4);
-            codespace += 4;
-            WriteInstruction16(codespace, 0xd80d);              // fmul dword ptr[&RealTimeStep]
-            std::memcpy(codespace, &addrRealTimeStep, 4);
-            codespace += 4;
+            Emit_FLD_DwordPtr(codespace, addrCameraRotationFactor);
+            Emit_FMUL_DwordPtr(codespace, addrRealTimeStep);
             WriteInstruction16(codespace, 0xd9c0);              // fld st
         }
 
@@ -80,12 +76,8 @@ void PatchMapControls(PatchExecData& execData,
         //      fld     ds:dbl_B3BA28   DD 05 ?? ?? ?? ??
         const auto inject = InjectJumpIntoCode<5>(logger, addressInjectPos, codespace);
 
-        WriteInstruction16(codespace, 0xd905);              // fld dword ptr[&CameraPanningFactor]
-        std::memcpy(codespace, &addrCameraPanningFactor, 4);
-        codespace += 4;
-        WriteInstruction16(codespace, 0xd80d);              // fmul dword ptr[&RealTimeStep]
-        std::memcpy(codespace, &addrRealTimeStep, 4);
-        codespace += 4;
+        Emit_FLD_DwordPtr(codespace, addrCameraPanningFactor);
+        Emit_FMUL_DwordPtr(codespace, addrRealTimeStep);
         WriteInstruction16(codespace, 0xd9c0);              // fld st
 
         BranchHelper4Byte jmpBack;
@@ -109,15 +101,13 @@ void PatchMapControls(PatchExecData& execData,
         //   #  fstp    [ebp-4h]                D9 5D FC
         const auto inject = InjectJumpIntoCode<6, PaddingInstruction::Nop>(logger, addressInjectPos, codespace);
 
-        WriteInstruction16(codespace, 0xd905);              // fld dword ptr[&CameraZoomFactor]
-        std::memcpy(codespace, &addrCameraZoomFactor, 4);
-        codespace += 4;
-        WriteInstruction16(codespace, 0xd80d);              // fmul dword ptr[&RealTimeStep]
-        std::memcpy(codespace, &addrRealTimeStep, 4);
-        codespace += 4;
+        Emit_FLD_DwordPtr(codespace, addrCameraZoomFactor);
+        Emit_FMUL_DwordPtr(codespace, addrRealTimeStep);
         WriteInstruction16(codespace, 0xdee9);              // fsubp st(1),st
 
-        std::memcpy(codespace, inject.OverwrittenInstructions.data() + 3, inject.OverwrittenInstructions.size() - 3);
+        std::memcpy(codespace,
+                    inject.OverwrittenInstructions.data() + 3,
+                    inject.OverwrittenInstructions.size() - 3);
         codespace += (inject.OverwrittenInstructions.size() - 3);
 
         BranchHelper4Byte jmpBack;
@@ -139,14 +129,12 @@ void PatchMapControls(PatchExecData& execData,
         //      fstp    [ebp-4h]                D9 5D FC
         const auto inject = InjectJumpIntoCode<9, PaddingInstruction::Nop>(logger, addressInjectPos, codespace);
 
-        WriteInstruction16(codespace, 0xd905); // fld dword ptr[&CameraZoomFactor]
-        std::memcpy(codespace, &addrCameraZoomFactor, 4);
-        codespace += 4;
-        WriteInstruction16(codespace, 0xd80d);         // fmul dword ptr[&RealTimeStep]
-        std::memcpy(codespace, &addrRealTimeStep, 4);
-        codespace += 4;
+        Emit_FLD_DwordPtr(codespace, addrCameraZoomFactor);
+        Emit_FMUL_DwordPtr(codespace, addrRealTimeStep);
 
-        std::memcpy(codespace, inject.OverwrittenInstructions.data() + 3, inject.OverwrittenInstructions.size() - 3);
+        std::memcpy(codespace,
+                    inject.OverwrittenInstructions.data() + 3,
+                    inject.OverwrittenInstructions.size() - 3);
         codespace += (inject.OverwrittenInstructions.size() - 3);
 
         BranchHelper4Byte jmpBack;
@@ -160,18 +148,62 @@ void PatchMapControls(PatchExecData& execData,
     mapCameraMinTiltDeg = std::clamp(fmodf(fabsf(mapCameraMinTiltDeg), 360.0f), 0.0f, 45.0f);
     if (mapCameraMinTiltDeg < 45.0f) {
         char* codespace = execData.Codespace;
-        char* addressInjectPos = GetCodeAddressJpEn(version, textRegion, 0x6252C5, 0x626875);
 
         // Inject pos:
         // ->#  fld     ds:flt_B43424           D9 05 ?? ?? ?? ??   (45.0f)
         //      fcom    dword ptr [esi+2E4h]    D8 96 E4 02 00 00
         //      fnstsw  ax                      DF E0
+        char* const addressInjectPos = GetCodeAddressJpEn(version, textRegion, 0x6252C5, 0x626875);
 
         const char* const addrMinCameraTilt = codespace;
         HyoutaUtils::MemWrite::WriteAdvUInt32(codespace, std::bit_cast<uint32_t>(mapCameraMinTiltDeg));
 
         PageUnprotect page(logger, addressInjectPos + 2, 4);
         std::memcpy(addressInjectPos + 2, &addrMinCameraTilt, 4);
+
+        execData.Codespace = codespace;
+    }
+
+    // fix default tilt to 45deg
+    {
+        // Inject pos:
+        // ->#  fld     ds:flt_B3A194           D9 05 ?? ?? ?? ??       30.0f
+        //   #  fstp    dword ptr [esi+2E4h]    D9 9E E4 02 00 00
+        //      fldz                            D9 EE
+        char* address = GetCodeAddressJpEn(version, textRegion, 0x62479A, 0x625D4A);
+
+        const uint32_t uDefaultTiltDeg = std::bit_cast<uint32_t>(45.0f);
+        PageUnprotect page(logger, address, 12);
+        WriteInstruction48(address, 0xc786e4020000);    // mov dword ptr [esi+2E4h], uDefaultTiltDeg
+        WriteInstruction32(address, BSWAP32(uDefaultTiltDeg));
+        WriteInstruction16(address, 0x9090); // nop
+    }
+
+    // change default zoom level
+    defaultMapZoomLevel = std::clamp(fabsf(defaultMapZoomLevel), 0.5f, 2.5f);
+    if (defaultMapZoomLevel != 1.0f) {
+        char* codespace = execData.Codespace;
+        char* const addressInjectPos = GetCodeAddressJpEn(version, textRegion, 0x6248FC, 0x625EAC);
+
+        const char* const addrDefaultMapZoomLevel = codespace;
+        HyoutaUtils::MemWrite::WriteAdvUInt32(codespace, std::bit_cast<uint32_t>(defaultMapZoomLevel));
+
+        // Inject pos:
+        // ->#  fld1                            D9 E8
+        //   #  mov     [esi+300h], edi         89 BE 00 03 00 00
+        //      fstp    dword ptr [esi+2ECh]    D9 9E EC 02 00 00
+        const auto inject = InjectJumpIntoCode<8, PaddingInstruction::Nop>(logger, addressInjectPos, codespace);
+
+        Emit_FLD_DwordPtr(codespace, addrDefaultMapZoomLevel);
+
+        std::memcpy(codespace,
+                    inject.OverwrittenInstructions.data() + 2,
+                    inject.OverwrittenInstructions.size() - 2);
+        codespace += (inject.OverwrittenInstructions.size() - 2);
+
+        BranchHelper4Byte jmpBack;
+        jmpBack.SetTarget(inject.JumpBackAddress);
+        jmpBack.WriteJump(codespace, JC::JMP);
 
         execData.Codespace = codespace;
     }

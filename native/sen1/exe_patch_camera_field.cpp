@@ -1,11 +1,8 @@
 #include "exe_patch.h"
 
-#include <cassert>
-
 #include "util/bit.h"
 #include "x86/emitter.h"
 #include "x86/inject_jump_into.h"
-#include "x86/page_unprotect.h"
 
 namespace SenLib::Sen1 {
 extern float RealTimeStep;
@@ -36,7 +33,7 @@ void PatchFieldCamera(PatchExecData& execData, bool adjustTimersForTurbo) {
         //      fstp    [ebp-10h]       D9 5D F0
         const auto inject = InjectJumpIntoCode<9, PaddingInstruction::Nop>(logger, addressInjectPos, codespace);
 
-        BranchHelper4Byte j0, j1;
+        BranchHelper1Byte j0, j1;
 
         const uint32_t offGetSettings = addrGetSettings - reinterpret_cast<uint32_t>(codespace + 5);
         WriteInstruction40(codespace, 0xe800000000 | BSWAP32(offGetSettings));              // call getSettings

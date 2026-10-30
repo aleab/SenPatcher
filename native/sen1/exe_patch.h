@@ -63,6 +63,7 @@ void PatchBattleCamera(PatchExecData& execData,
 void PatchMapControls(PatchExecData& execData,
                       bool invertMapCameraYAxis,
                       float mapCameraMinTiltDeg,
+                      float defaultMapZoomLevel,
                       bool adjustTimersForTurbo);
 void PatchFishing(PatchExecData& execData, bool adjustTimersForTurbo);
 } // namespace SenLib::Sen1
