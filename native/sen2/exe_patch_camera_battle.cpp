@@ -1,5 +1,6 @@
 #include "exe_patch.h"
 
+#include <algorithm>
 #include <bit>
 
 #include "util/bit.h"
@@ -17,6 +18,7 @@ static float PointerSpeed = 1.0f;
 void PatchBattleCamera(PatchExecData& execData,
                        bool disableBattleCameraIdleRotation,
                        bool disableBattleCameraTiltReset,
+                       float defaultCameraTiltDeg,
                        float pointerSpeedFactor1,
                        float pointerSpeedFactor2,
                        bool adjustTimersForTurbo) {
@@ -143,6 +145,24 @@ void PatchBattleCamera(PatchExecData& execData,
 
         for (size_t i = 5; i < length; ++i) {
             *addressInjectPos++ = static_cast<char>(0x90);
+        }
+    }
+
+    // change default camera tilt/distance
+    defaultCameraTiltDeg = std::clamp(fmodf(fabsf(defaultCameraTiltDeg), 360.0f), 5.0f, 40.0f);
+    if (defaultCameraTiltDeg != 15.0f) {
+        // Inject pos:
+        // ->#  mov     dword ptr [ebp-0BCh], 41700000h     C7 85 44 FF FF FF 00 00 70 41       15.0f
+        //      mov     dword ptr [ebp-0B4h], 0             C7 85 4C FF FF FF 00 00 00 00
+        char* const addresses[2] = {
+            GetCodeAddressJpEn(version, textRegion, 0x4C6893, 0x4C6B53) + 6,
+            GetCodeAddressJpEn(version, textRegion, 0x4C74DB, 0x4C779B) + 6,
+        };
+
+        for (auto address : addresses) {
+            const uint32_t uDefaultCameraTiltDeg = std::bit_cast<uint32_t>(defaultCameraTiltDeg);
+            PageUnprotect page(logger, address, 4);
+            WriteInstruction32(address, BSWAP32(uDefaultCameraTiltDeg));
         }
     }
 

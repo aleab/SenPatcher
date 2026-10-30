@@ -57,6 +57,7 @@ void PatchFieldCamera(PatchExecData& execData, bool adjustTimersForTurbo);
 void PatchBattleCamera(PatchExecData& execData,
                        bool disableBattleCameraIdleRotation,
                        bool disableBattleCameraTiltReset,
+                       float defaultCameraTiltDeg,
                        float pointerSpeedFactor1,
                        float pointerSpeedFactor2,
                        bool adjustTimersForTurbo);

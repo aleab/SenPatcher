@@ -559,6 +559,7 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     int cameraSensitivity = 3;
     bool disableBattleCameraIdleRotation = true;
     bool disableBattleCameraTiltReset = true;
+    float defaultBattleCameraTiltDeg = 25.0f;
     float battlePointerSpeedFactor1 = 1.5f;
     float battlePointerSpeedFactor2 = 0.8f;
     bool invertMapCameraYAxis = true;
@@ -659,6 +660,7 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
                 check_integer("CS2", "CameraSensitivity", cameraSensitivity);
                 check_boolean("CS2", "Battle_Camera_DisableIdleRotation", disableBattleCameraIdleRotation);
                 check_boolean("CS2", "Battle_Camera_DisableTiltReset", disableBattleCameraTiltReset);
+                check_float("CS2", "Battle_Camera_DefaultTiltDegrees", defaultBattleCameraTiltDeg);
                 check_float("CS2", "Battle_PointerSpeed1", battlePointerSpeedFactor1);
                 check_float("CS2", "Battle_PointerSpeed2", battlePointerSpeedFactor2);
                 check_boolean("CS2", "Map_Camera_InvertYAxis", invertMapCameraYAxis);
@@ -773,6 +775,7 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     SenLib::Sen2::PatchBattleCamera(patchExecData,
                                     disableBattleCameraIdleRotation,
                                     disableBattleCameraTiltReset,
+                                    defaultBattleCameraTiltDeg,
                                     battlePointerSpeedFactor1,
                                     battlePointerSpeedFactor2,
                                     adjustTimersForTurbo);

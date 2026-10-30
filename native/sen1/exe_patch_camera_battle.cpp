@@ -1,5 +1,6 @@
 #include "exe_patch.h"
 
+#include <algorithm>
 #include <bit>
 
 #include "util/bit.h"
@@ -17,6 +18,7 @@ static float PointerSpeed = 1.0f;
 void PatchBattleCamera(PatchExecData& execData,
                        bool disableBattleCameraIdleRotation,
                        bool disableBattleCameraTiltReset,
+                       float defaultCameraTiltDeg,
                        float pointerSpeedFactor1,
                        float pointerSpeedFactor2,
                        bool adjustTimersForTurbo) {
@@ -135,6 +137,39 @@ void PatchBattleCamera(PatchExecData& execData,
 
         for (size_t i = 5; i < length; ++i) {
             *addressInjectPos++ = static_cast<char>(0x90);
+        }
+    }
+
+    // change default camera tilt/distance
+    defaultCameraTiltDeg = std::clamp(fmodf(fabsf(defaultCameraTiltDeg), 360.0f), 5.0f, 40.0f);
+    if (defaultCameraTiltDeg != 15.0f) {
+        char* const addresses[2] = {
+            GetCodeAddressJpEn(version, textRegion, 0x5258E2, 0x527002),
+            GetCodeAddressJpEn(version, textRegion, 0x526526, 0x527C46),
+        };
+
+        // Inject pos:
+        //   #  fld     ds:flt_B3E8A8           D9 05 ?? ?? ?? ??
+        //      mov     edx, [ebp-100h]         8B 95 00 FF FF FF
+        // ->   fstp    dword ptr [ebp-0C4h]    D9 9D 3C FF FF FF
+        {
+            // re-arrange instructions
+            auto address = addresses[0] - 12;
+            PageUnprotect page(logger, address, 6);
+            std::memcpy(address, address + 6, 6);
+        }
+
+        const uint32_t uDefaultCameraTiltDeg = std::bit_cast<uint32_t>(defaultCameraTiltDeg);
+
+        // Inject pos:
+        //   #  fld     ds:flt_B3E8A8           D9 05 ?? ?? ?? ??
+        // ->#  fstp    dword ptr [ebp-0C4h]    D9 9D 3C FF FF FF
+        for (auto address : addresses) {
+            address -= 6;
+            PageUnprotect page(logger, address, 12);
+            WriteInstruction48(address, 0xc7853cffffff); // mov dword ptr [ebp-0C4h], uDefaultCameraTiltDeg
+            WriteInstruction32(address, BSWAP32(uDefaultCameraTiltDeg));
+            WriteInstruction16(address, 0x9090); // nop
         }
     }
 
