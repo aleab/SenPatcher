@@ -1342,6 +1342,7 @@ if (SENPATCHER_BUILD_CS2HOOK)
 		sen2/exe_patch_camera_battle.cpp
 		sen2/exe_patch_map_controls.cpp
 		sen2/exe_patch_fishing.cpp
+		sen2/exe_patch_horse_riding.cpp
 		sen2/inject_modloader.h
 		sen2/inject_modloader.cpp
 

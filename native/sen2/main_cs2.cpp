@@ -562,6 +562,7 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     float defaultBattleCameraTiltDeg = 25.0f;
     float battlePointerSpeedFactor1 = 1.5f;
     float battlePointerSpeedFactor2 = 0.8f;
+    float maxHorseCameraDistance = 10.0f;
     bool invertMapCameraYAxis = true;
     float mapCameraMinTiltDeg = 30.0f;
     float defaultMapZoomLevel = 1.25f;
@@ -663,6 +664,7 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
                 check_float("CS2", "Battle_Camera_DefaultTiltDegrees", defaultBattleCameraTiltDeg);
                 check_float("CS2", "Battle_PointerSpeed1", battlePointerSpeedFactor1);
                 check_float("CS2", "Battle_PointerSpeed2", battlePointerSpeedFactor2);
+                check_float("CS2", "Field_Camera_HorseMaxDistance", maxHorseCameraDistance);
                 check_boolean("CS2", "Map_Camera_InvertYAxis", invertMapCameraYAxis);
                 check_float("CS2", "Map_Camera_MinTiltDegrees", mapCameraMinTiltDeg);
                 check_float("CS2", "Map_Camera_DefaultZoomLevel", defaultMapZoomLevel);
@@ -789,6 +791,9 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     Align16CodePage(logger, patchExecData.Codespace);
 
     SenLib::Sen2::PatchFishing(patchExecData, adjustTimersForTurbo);
+    Align16CodePage(logger, patchExecData.Codespace);
+
+    SenLib::Sen2::PatchHorseRiding(patchExecData, maxHorseCameraDistance);
     Align16CodePage(logger, patchExecData.Codespace);
 
     // mark newly allocated page as executable

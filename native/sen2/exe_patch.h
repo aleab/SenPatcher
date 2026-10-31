@@ -70,4 +70,5 @@ void PatchMapControls(PatchExecData& execData,
                       float defaultMapZoomLevel,
                       bool adjustTimersForTurbo);
 void PatchFishing(PatchExecData& execData, bool adjustTimersForTurbo);
+void PatchHorseRiding(PatchExecData& execData, float maxCameraDistance);
 } // namespace SenLib::Sen2
