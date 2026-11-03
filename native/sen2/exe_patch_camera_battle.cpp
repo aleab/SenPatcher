@@ -87,24 +87,25 @@ void PatchBattleCamera(PatchExecData& execData,
     if (disableBattleCameraTiltReset) {
         char* codespace = execData.Codespace;
         char* const addressInjectPos = GetCodeAddressJpEn(version, textRegion, 0x4C68B1, 0x4C6B71);
+        char* const addressSkipPos = GetCodeAddressJpEn(version, textRegion, 0x4C68E3, 0x4C6BA3);
 
         // Inject pos:
-        // ->#  movss   xmm0, [ebp+8h]          F3 0F 10 45 08
-        //      push    1                       6A 01
+        // ->#  movss   xmm0, [ebp+8h]              F3 0F 10 45 08
+        //      push    1                           6A 01
         //      ...
-        //      movss   [esp+10h], xmm0         F3 0F 11 44 24 10
-        //      movq    xmm0, [ebp-0BCh]        F3 0F 7E 85 44 FF FF FF
-        //      movq    qword ptr [eax], xmm0   66 0F D6 00
+        //      movss   [esp+10h], xmm0             F3 0F 11 44 24 10
+        //      movq    xmm0, [ebp-0BCh]            F3 0F 7E 85 44 FF FF FF
+        //      movq    qword ptr [eax], xmm0       66 0F D6 00
         //      ...
-        //      call    setCameraRotation       E8 ?? ?? ?? ??
+        //      call    setBattleCameraRotation     E8 ?? ?? ?? ??
         const auto inject = InjectJumpIntoCode<5>(logger, addressInjectPos, codespace);
 
         BranchHelper4Byte jmpBack, jSkip;
         jmpBack.SetTarget(inject.JumpBackAddress);
-        jSkip.SetTarget(addressInjectPos + 50);
+        jSkip.SetTarget(addressSkipPos);
 
         // SM state == 3: battle start / camera reset (?) / player turn (?)
-        //    Skip the setCameraRotation call, but not if this is the first time in this
+        //    Skip the setBattleCameraRotation call, but not if this is the first time in this
         //    battle that the SM enters this state.
 
         Emit_MOV_R8_BytePtr(codespace, R8::AL, &BattleStarted);
@@ -123,29 +124,49 @@ void PatchBattleCamera(PatchExecData& execData,
     }
     if (disableBattleCameraTiltReset) {
         // Inject pos:
-        // ->#  movss   xmm0, [ebp+8h]          F3 0F 10 45 08
-        //   #  push    2                       6A 02
+        // ->#  movss   xmm0, [ebp+8h]              F3 0F 10 45 08
+        //   #  push    2                           6A 02
         //   #  ...
-        //   #  movss   [esp+10h], xmm0         F3 0F 11 44 24 10
-        //   #  movq    xmm0, [ebp-0BCh]        F3 0F 7E 85 44 FF FF FF
-        //   #  movq    qword ptr [eax], xmm0   66 0F D6 00
+        //   #  movss   [esp+10h], xmm0             F3 0F 11 44 24 10
+        //   #  movq    xmm0, [ebp-0BCh]            F3 0F 7E 85 44 FF FF FF
+        //   #  movq    qword ptr [eax], xmm0       66 0F D6 00
         //   #  ...
-        //   #  call    setCameraRotation       E8 ?? ?? ?? ??
+        //   #  call    setBattleCameraRotation     E8 ?? ?? ?? ??
         char* addressInjectPos = GetCodeAddressJpEn(version, textRegion, 0x4C752B, 0x4C77B9);
-        size_t length = 50;
+        char* const addressSkipPos = GetCodeAddressJpEn(version, textRegion, 0x4C755D, 0x4C77EB);
 
         // SM state == 13: npc turn (?)
-        //    Always skip the setCameraRotation call.
+        //    Always skip the setBattleCameraRotation call.
 
-        PageUnprotect page(logger, addressInjectPos, length);
+        PageUnprotect page(logger, addressInjectPos, addressSkipPos - addressInjectPos);
 
-        BranchHelper4Byte jmp;
-        jmp.SetTarget(addressInjectPos + length);
+        BranchHelper1Byte jmp;
+        jmp.SetTarget(addressSkipPos);
         jmp.WriteJump(addressInjectPos, JC::JMP);
 
-        for (size_t i = 5; i < length; ++i) {
+        while (addressInjectPos < addressSkipPos) {
             *addressInjectPos++ = static_cast<char>(0x90);
         }
+    }
+    if (disableBattleCameraTiltReset) {
+        // Inject pos:
+        // ->#  movss   xmm0, [ebp+8h]              F3 0F 10 45 08
+        //      push    1                           6A 01
+        //      sub     esp, 8                      83 EC 08
+        //      mov     ecx, esi                    8B CE
+        //      movss   dword ptr [esp+4], xmm0     F3 0F 11 44 24 04
+        //      movss   xmm0, dword ptr [ebp-94h]   F3 0F 10 85 6C FF FF FF
+        //      movss   dword ptr [esp], xmm0       F3 0F 11 04 24
+        //      call    setBattleCameraDistance     E8 ?? ?? ?? ??
+        char* address = GetCodeAddressJpEn(version, textRegion, 0x4C68E3, 0x4C6BA3);
+
+        // Immediate camera distance change, rather than over time.
+        // Fixes camera distance flickering at the start of the battle and when selecting an action from the wheel.
+
+        PageUnprotect page(logger, address, 5);
+        Emit_XORPS_XMM_XMM(address, XMM::XMM0, XMM::XMM0);
+        *address++ = static_cast<char>(0x90);
+        *address++ = static_cast<char>(0x90);
     }
 
     // change default camera tilt/distance
@@ -159,11 +180,27 @@ void PatchBattleCamera(PatchExecData& execData,
             GetCodeAddressJpEn(version, textRegion, 0x4C74DB, 0x4C779B) + 6,
         };
 
+        const uint32_t uDefaultCameraTiltDeg = std::bit_cast<uint32_t>(defaultCameraTiltDeg);
         for (auto address : addresses) {
-            const uint32_t uDefaultCameraTiltDeg = std::bit_cast<uint32_t>(defaultCameraTiltDeg);
             PageUnprotect page(logger, address, 4);
             WriteInstruction32(address, BSWAP32(uDefaultCameraTiltDeg));
         }
+    }
+
+    // fix default camera tilt/distance reset during chained battles
+    {
+        // Inject pos:
+        // ->#  mov     dword ptr [esp+3Ch], 0              C7 44 24 3C 00 00 00 00
+        //      mov     dword ptr [eax+0F8h], 2             C7 80 F8 00 00 00 02 00 00 00
+        //      mov     eax, [edi+0D50h]                    8B 87 50 0D 00 00
+        //      mov     dword ptr [esp+40h], 41A00000h      C7 44 24 40 00 00 A0 41
+        char* address = GetCodeAddressJpEn(version, textRegion, 0x484ED5, 0x485075) + 4;
+
+        const uint32_t uDefaultCameraTiltDeg = defaultCameraTiltDeg != 15.0f
+                                                   ? std::bit_cast<uint32_t>(defaultCameraTiltDeg)
+                                                   : std::bit_cast<uint32_t>(15.0f);
+        PageUnprotect page(logger, address, 4);
+        WriteInstruction32(address, BSWAP32(uDefaultCameraTiltDeg));
     }
 
     // use unscaled timestep * mouse sensitivity
