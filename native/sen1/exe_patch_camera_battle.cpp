@@ -167,8 +167,7 @@ void PatchBattleCamera(PatchExecData& execData,
         for (auto address : addresses) {
             address -= 6;
             PageUnprotect page(logger, address, 12);
-            WriteInstruction48(address, 0xc7853cffffff); // mov dword ptr [ebp-0C4h], uDefaultCameraTiltDeg
-            WriteInstruction32(address, BSWAP32(uDefaultCameraTiltDeg));
+            Emit_MOV_DwordPtrR32PlusOffset_IMM32(address, R32::EBP, -0xc4, uDefaultCameraTiltDeg);
             WriteInstruction16(address, 0x9090); // nop
         }
     }

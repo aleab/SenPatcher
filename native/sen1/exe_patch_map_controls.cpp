@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <bit>
 
-#include "util/bit.h"
 #include "util/memwrite.h"
 #include "x86/emitter.h"
 #include "x86/inject_jump_into.h"
@@ -174,8 +173,7 @@ void PatchMapControls(PatchExecData& execData,
 
         const uint32_t uDefaultTiltDeg = std::bit_cast<uint32_t>(45.0f);
         PageUnprotect page(logger, address, 12);
-        WriteInstruction48(address, 0xc786e4020000);    // mov dword ptr [esi+2E4h], uDefaultTiltDeg
-        WriteInstruction32(address, BSWAP32(uDefaultTiltDeg));
+        Emit_MOV_DwordPtrR32PlusOffset_IMM32(address, R32::ESI, 0x2e4, uDefaultTiltDeg);
         WriteInstruction16(address, 0x9090); // nop
     }
 

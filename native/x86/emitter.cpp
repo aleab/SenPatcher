@@ -39,7 +39,7 @@ void Emit_MOV_R32_IMM32(char*& address, R32 dst, uint32_t imm, size_t desiredEnc
     }
 }
 
-void Emit_MOV_R32_DwordPtr(char*& address, R32 dst, void* src) {
+void Emit_MOV_R32_DwordPtr(char*& address, R32 dst, const void* src) {
     if (dst == R32::EAX) {
         *address++ = static_cast<char>(0xa1);
     } else {
@@ -50,7 +50,7 @@ void Emit_MOV_R32_DwordPtr(char*& address, R32 dst, void* src) {
     address += 4;
 }
 
-void Emit_MOV_DwordPtr_R32(char*& address, void* dst, R32 src) {
+void Emit_MOV_DwordPtr_R32(char*& address, const void* dst, R32 src) {
     if (src == R32::EAX) {
         *address++ = static_cast<char>(0xa3);
     } else {
@@ -124,13 +124,41 @@ void Emit_MOV_DwordPtrR32PlusOffset_R32(char*& address, R32 dst, int32_t offset,
     }
 }
 
+void Emit_MOV_DwordPtrR32PlusOffset_IMM32(char*& address, R32 dst, int32_t offset, uint32_t imm) {
+    if (offset >= -128 && offset <= 127) {
+        int op = 0x40;
+        op |= (static_cast<int>(dst) & 0x7);
+
+        *address++ = static_cast<char>(0xc7);
+        *address++ = static_cast<char>(op);
+        if (dst == R32::ESP) {
+            *address++ = static_cast<char>(0x24);
+        }
+        *address++ = static_cast<char>(offset);
+    } else {
+        int op = 0x80;
+        op |= (static_cast<int>(dst) & 0x7);
+
+        *address++ = static_cast<char>(0xc7);
+        *address++ = static_cast<char>(op);
+        if (dst == R32::ESP) {
+            *address++ = static_cast<char>(0x24);
+        }
+        std::memcpy(address, &offset, 4);
+        address += 4;
+    }
+
+    std::memcpy(address, &imm, 4);
+    address += 4;
+}
+
 void Emit_MOV_R8_IMM8(char*& address, R8 dst, uint8_t imm) {
     int op = 0xb0 | (static_cast<int>(dst) & 0x7);
     *address++ = static_cast<char>(op);
     *address++ = static_cast<char>(imm);
 }
 
-void Emit_MOV_R8_BytePtr(char*& address, R8 dst, void* src) {
+void Emit_MOV_R8_BytePtr(char*& address, R8 dst, const void* src) {
     if (dst == R8::AL) {
         *address++ = static_cast<char>(0xa0);
     } else {
@@ -143,7 +171,7 @@ void Emit_MOV_R8_BytePtr(char*& address, R8 dst, void* src) {
     address += 4;
 }
 
-void Emit_MOVZX_R32_BytePtr(char*& address, R32 dst, void* src) {
+void Emit_MOVZX_R32_BytePtr(char*& address, R32 dst, const void* src) {
     *address++ = static_cast<char>(0x0f);
     *address++ = static_cast<char>(0xb6);
     *address++ = static_cast<char>(0x5 | ((static_cast<int>(dst) & 0x7) << 3));
@@ -192,7 +220,7 @@ void Emit_MOVZX_R32_BytePtrR32PlusOffset(char*& address, R32 dst, R32 src, int32
     }
 }
 
-void Emit_MOVSX_R32_BytePtr(char*& address, R32 dst, void* src) {
+void Emit_MOVSX_R32_BytePtr(char*& address, R32 dst, const void* src) {
     *address++ = static_cast<char>(0x0f);
     *address++ = static_cast<char>(0xbe);
     *address++ = static_cast<char>(0x5 | ((static_cast<int>(dst) & 0x7) << 3));
@@ -241,7 +269,7 @@ void Emit_MOVSX_R32_BytePtrR32PlusOffset(char*& address, R32 dst, R32 src, int32
     }
 }
 
-void Emit_MOV_BytePtr_R8(char*& address, void* dst, R8 src) {
+void Emit_MOV_BytePtr_R8(char*& address, const void* dst, R8 src) {
     if (src == R8::AL) {
         *address++ = static_cast<char>(0xa2);
     } else {
@@ -252,6 +280,17 @@ void Emit_MOV_BytePtr_R8(char*& address, void* dst, R8 src) {
     uint32_t imm32 = reinterpret_cast<uint32_t>(dst);
     std::memcpy(address, &imm32, 4);
     address += 4;
+}
+
+void Emit_MOV_BytePtr_IMM8(char*& address, const void* dst, uint8_t imm) {
+    *address++ = static_cast<char>(0xc6);
+    *address++ = static_cast<char>(0x05);
+
+    uint32_t imm32 = reinterpret_cast<uint32_t>(dst);
+    std::memcpy(address, &imm32, 4);
+    address += 4;
+
+    *address++ = static_cast<char>(imm);
 }
 
 void Emit_JMP_R32(char*& address, R32 target) {
@@ -323,7 +362,7 @@ void Emit_TEST_R8_R8(char*& address, R8 dst, R8 src) {
     Emit_Instr2Byte_R8_R8(address, src, dst, static_cast<char>(0x84));
 }
 
-void Emit_TEST_R8_BytePtr(char*& address, R8 dst, void* src) {
+void Emit_TEST_R8_BytePtr(char*& address, R8 dst, const void* src) {
     *address++ = static_cast<char>(0x84);
     *address++ = static_cast<char>(0x5 | ((static_cast<int>(dst) & 0x7) << 3));
     uint32_t imm32 = reinterpret_cast<uint32_t>(src);
@@ -579,6 +618,15 @@ void Emit_DIVSS_XMM_DwordPtr(char*& address, XMM dst, const void* src) {
     *address++ = static_cast<char>(0x05 | ((static_cast<int>(dst) & 0x7) << 3));
     std::memcpy(address, &src, 4);
     address += 4;
+}
+
+void Emit_XORPS_XMM_XMM(char*& address, XMM dst, XMM src) {
+    *address++ = static_cast<char>(0x0f);
+    *address++ = static_cast<char>(0x57);
+    int op = 0xc0;
+    op |= (static_cast<int>(src) & 0x7);
+    op |= ((static_cast<int>(dst) & 0x7) << 3);
+    *address++ = static_cast<char>(op);
 }
 
 void Emit_CVTSI2SS_XMM_R32(char*& address, XMM dst, R32 src) {

@@ -83,17 +83,19 @@ enum class JumpCondition {
 
 void Emit_MOV_R32_R32(char*& address, R32 dst, R32 src);
 void Emit_MOV_R32_IMM32(char*& address, R32 dst, uint32_t imm, size_t desiredEncodingLength = 0);
-void Emit_MOV_R32_DwordPtr(char*& address, R32 dst, void* src);
-void Emit_MOV_DwordPtr_R32(char*& address, void* dst, R32 src);
+void Emit_MOV_R32_DwordPtr(char*& address, R32 dst, const void* src);
+void Emit_MOV_DwordPtr_R32(char*& address, const void* dst, R32 src);
 void Emit_MOV_R32_DwordPtrR32PlusOffset(char*& address, R32 dst, R32 src, int32_t offset);
 void Emit_MOV_DwordPtrR32PlusOffset_R32(char*& address, R32 dst, int32_t offset, R32 src);
+void Emit_MOV_DwordPtrR32PlusOffset_IMM32(char*& address, R32 dst, int32_t offset, uint32_t imm);
 void Emit_MOV_R8_IMM8(char*& address, R8 dst, uint8_t imm);
-void Emit_MOV_R8_BytePtr(char*& address, R8 dst, void* src);
-void Emit_MOVZX_R32_BytePtr(char*& address, R32 dst, void* src);
+void Emit_MOV_R8_BytePtr(char*& address, R8 dst, const void* src);
+void Emit_MOV_BytePtr_R8(char*& address, const void* dst, R8 src);
+void Emit_MOV_BytePtr_IMM8(char*& address, const void* dst, uint8_t imm);
+void Emit_MOVZX_R32_BytePtr(char*& address, R32 dst, const void* src);
 void Emit_MOVZX_R32_BytePtrR32PlusOffset(char*& address, R32 dst, R32 src, int32_t offset);
-void Emit_MOVSX_R32_BytePtr(char*& address, R32 dst, void* src);
+void Emit_MOVSX_R32_BytePtr(char*& address, R32 dst, const void* src);
 void Emit_MOVSX_R32_BytePtrR32PlusOffset(char*& address, R32 dst, R32 src, int32_t offset);
-void Emit_MOV_BytePtr_R8(char*& address, void* dst, R8 src);
 void Emit_JMP_R32(char*& address, R32 target);
 void Emit_CALL_R32(char*& address, R32 target);
 void Emit_RET(char*& address);
@@ -107,7 +109,7 @@ void Emit_ADC_R32_R32(char*& address, R32 dst, R32 src);
 void Emit_SUB_R32_R32(char*& address, R32 dst, R32 src);
 void Emit_TEST_R32_R32(char*& address, R32 dst, R32 src);
 void Emit_TEST_R8_R8(char*& address, R8 dst, R8 src);
-void Emit_TEST_R8_BytePtr(char*& address, R8 dst, void* src);
+void Emit_TEST_R8_BytePtr(char*& address, R8 dst, const void* src);
 void Emit_CMP_R32_R32(char*& address, R32 dst, R32 src);
 void Emit_CMP_R32_IMM32(char*& address, R32 dst, int32_t imm);
 void Emit_CMP_R8_R8(char*& address, R8 dst, R8 src);
@@ -134,6 +136,7 @@ void Emit_MULSS_XMM_XMM(char*& address, XMM dst, XMM src);
 void Emit_MULSS_XMM_DwordPtr(char*& address, XMM dst, const void* src);
 void Emit_DIVSS_XMM_XMM(char*& address, XMM dst, XMM src);
 void Emit_DIVSS_XMM_DwordPtr(char*& address, XMM dst, const void* src);
+void Emit_XORPS_XMM_XMM(char*& address, XMM dst, XMM src);
 void Emit_CVTSI2SS_XMM_R32(char*& address, XMM dst, R32 src);
 
 struct BranchHelper1Byte {
@@ -177,6 +180,17 @@ private:
     void AddSource(char* source);
     void Commit(char* source);
 };
+
+inline void WriteInstruction64(char*& codepos, uint64_t instr) {
+    *codepos++ = (char)((instr >> 56) & 0xff);
+    *codepos++ = (char)((instr >> 48) & 0xff);
+    *codepos++ = (char)((instr >> 40) & 0xff);
+    *codepos++ = (char)((instr >> 32) & 0xff);
+    *codepos++ = (char)((instr >> 24) & 0xff);
+    *codepos++ = (char)((instr >> 16) & 0xff);
+    *codepos++ = (char)((instr >> 8) & 0xff);
+    *codepos++ = (char)(instr & 0xff);
+}
 
 inline void WriteInstruction56(char*& codepos, uint64_t instr) {
     *codepos++ = (char)((instr >> 48) & 0xff);

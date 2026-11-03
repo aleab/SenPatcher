@@ -43,8 +43,7 @@ void PatchFieldCamera(PatchExecData& execData, bool adjustTimersForTurbo) {
         WriteInstruction16(codespace, 0x84c0);                                              // test al, al
 
         j0.WriteJump(codespace, JC::JZ);
-        WriteInstruction56(codespace, 0xc78424a8000000);    // mov dword ptr [esp+0A8h], 0
-        WriteInstruction32(codespace, 0);
+        Emit_MOV_DwordPtrR32PlusOffset_IMM32(codespace, R32::ESP, 0xa8, 0); // mov dword ptr [esp+0A8h], 0
         jmpBack.WriteJump(codespace, JC::JMP);
 
         j0.SetTarget(codespace);
