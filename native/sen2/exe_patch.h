@@ -71,4 +71,5 @@ void PatchMapControls(PatchExecData& execData,
                       bool adjustTimersForTurbo);
 void PatchFishing(PatchExecData& execData, bool adjustTimersForTurbo);
 void PatchHorseRiding(PatchExecData& execData, float maxCameraDistance);
+void PatchBikeRiding(PatchExecData& execData, int disableCameraAutoCentering);
 } // namespace SenLib::Sen2
