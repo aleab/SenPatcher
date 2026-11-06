@@ -309,6 +309,33 @@ void PatchMapControls(PatchExecData& execData,
             *(address + 6) = static_cast<char>(0);
         }
     }
+    if (useFreeCursorOnWorldMap) {
+        // Inject pos:
+        //      ...                                     74 4F 6A 00 51 8B 0D ?? ?? ?? ?? C7 04 24 00 00 00 00 6A 00 6A 00 83 EC 10
+        //      mov     dword ptr [esp+0Ch], 0          C7 44 24 0C 00 00 00 00
+        //      mov     dword ptr [esp+8], 0            C7 44 24 08 00 00 00 00
+        //      mov     dword ptr [esp+4], 0            C7 44 24 04 00 00 00 00
+        //      mov     dword ptr [esp], 3F800000h      C7 04 24 00 00 80 3F
+        // ->#  push    12005                           68 E5 2E 00 00
+        //      call    sub_57C9D0                      E8 ?? ?? ?? ??
+        char* const addresses[4] = {
+            GetCodeAddressJpEn(version, textRegion, 0x598592, 0x5987C2),
+            GetCodeAddressJpEn(version, textRegion, 0x5985F6, 0x598826),
+            GetCodeAddressJpEn(version, textRegion, 0x598658, 0x598888),
+            GetCodeAddressJpEn(version, textRegion, 0x5986C0, 0x5988F0),
+        };
+
+        // Do not play the sound effect
+
+        for (auto address : addresses) {
+            PageUnprotect page(logger, address, 5);
+            *address++ = static_cast<char>(0x6a);
+            *address++ = static_cast<char>(0xff);
+            *address++ = static_cast<char>(0x90);
+            *address++ = static_cast<char>(0x90);
+            *address++ = static_cast<char>(0x90);
+        }
+    }
 
     // cursor speed
     worldMapCursorSpeed = std::clamp(fabsf(worldMapCursorSpeed), 0.1f, 1.5f);
