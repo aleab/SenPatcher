@@ -68,6 +68,9 @@ void PatchMapControls(PatchExecData& execData,
                       bool invertMapCameraYAxis,
                       float mapCameraMinTiltDeg,
                       float defaultMapZoomLevel,
+                      bool useFreeCursorOnWorldMap,
+                      float worldMapCursorSpeed,
+                      bool holdShiftToMoveFasterOnWorldMap,
                       bool adjustTimersForTurbo);
 void PatchFishing(PatchExecData& execData, bool adjustTimersForTurbo);
 void PatchHorseRiding(PatchExecData& execData, float maxCameraDistance);

@@ -559,14 +559,17 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     int cameraSensitivity = 3;
     bool disableBattleCameraIdleRotation = true;
     bool disableBattleCameraTiltReset = true;
-    float defaultBattleCameraTiltDeg = 25.0f;
+    float defaultBattleCameraTiltDeg = 15.0f;
     float battlePointerSpeedFactor1 = 1.5f;
     float battlePointerSpeedFactor2 = 0.8f;
-    float maxHorseCameraDistance = 10.0f;
+    float maxHorseCameraDistance = 7.0f;
     int disableBikeCameraAutoCentering = -1;
     bool invertMapCameraYAxis = true;
-    float mapCameraMinTiltDeg = 30.0f;
-    float defaultMapZoomLevel = 1.25f;
+    float mapCameraMinTiltDeg = 45.0f;
+    float defaultMapZoomLevel = 1.0f;
+    bool useFreeCursorOnWorldMap = true;
+    float worldMapCursorSpeed = 1.0f;
+    bool holdShiftToMoveFasterOnWorldMap = false;
 
     {
         std::string settingsFilePath;
@@ -670,6 +673,9 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
                 check_boolean("CS2", "Map_Camera_InvertYAxis", invertMapCameraYAxis);
                 check_float("CS2", "Map_Camera_MinTiltDegrees", mapCameraMinTiltDeg);
                 check_float("CS2", "Map_Camera_DefaultZoomLevel", defaultMapZoomLevel);
+                check_boolean("CS2", "Map_World_UseFreeCursor", useFreeCursorOnWorldMap);
+                check_float("CS2", "Map_World_CursorSpeed", worldMapCursorSpeed);
+                check_boolean("CS2", "Map_World_HoldShiftToMoveFaster", holdShiftToMoveFasterOnWorldMap);
             }
         }
     }
@@ -789,6 +795,9 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
                                    invertMapCameraYAxis,
                                    mapCameraMinTiltDeg,
                                    defaultMapZoomLevel,
+                                   useFreeCursorOnWorldMap,
+                                   worldMapCursorSpeed,
+                                   holdShiftToMoveFasterOnWorldMap,
                                    adjustTimersForTurbo);
     Align16CodePage(logger, patchExecData.Codespace);
 
