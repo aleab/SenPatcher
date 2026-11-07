@@ -22,7 +22,6 @@ void PatchBikeRiding(PatchExecData& execData, int disableCameraAutoCentering) {
         reinterpret_cast<uint32_t>(GetCodeAddressJpEn(version, textRegion, 0x6CF4D0, 0x6D0440));
 
     // use Left Stick Y- (S on keyboard) to brake/reverse
-    // BUG: can't steer while reversing this way
     {
         char* codespace = execData.Codespace;
         char* const addressInjectPos = GetCodeAddressJpEn(version, textRegion, 0x5469DD, 0x5465FD);
@@ -42,14 +41,19 @@ void PatchBikeRiding(PatchExecData& execData, int disableCameraAutoCentering) {
         //      jnz     short loc_54669A                75 7C
         const auto inject = InjectJumpIntoCode<6, PaddingInstruction::Nop>(logger, addressInjectPos, codespace);
 
+        BranchHelper1Byte j0;
         BranchHelper4Byte jReverse;
         jReverse.SetTarget((addressInjectPos + 33) + *(addressInjectPos + 32)); // loc_54669A
 
         WriteInstruction24(codespace, 0x0f2f05);    // comiss xmm0, dword ptr [addrDeadzone]
         std::memcpy(codespace, &addrDeadzone, 4);
         codespace += 4;
-        jReverse.WriteJump(codespace, JC::JBE);
+        j0.WriteJump(codespace, JC::JA);
 
+        WriteInstruction48(codespace, 0xf30f114c2418); // movss dword ptr [esp+18h], xmm1
+        jReverse.WriteJump(codespace, JC::JMP);
+
+        j0.SetTarget(codespace);
         std::memcpy(codespace,
                     inject.OverwrittenInstructions.data(),
                     inject.OverwrittenInstructions.size());
