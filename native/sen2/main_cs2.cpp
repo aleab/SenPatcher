@@ -753,6 +753,8 @@ static void* SetupHacks(HyoutaUtils::Logger& logger) {
     if (disablePauseOnFocusLoss) {
         SenLib::Sen2::PatchDisablePauseOnFocusLoss(patchExecData);
         Align16CodePage(logger, patchExecData.Codespace);
+        SenLib::Sen2::PatchStopCameraOnFocusLoss(patchExecData);
+        Align16CodePage(logger, patchExecData.Codespace);
     }
     if (fixControllerMapping) {
         SenLib::Sen2::PatchFixControllerMappings(patchExecData);
