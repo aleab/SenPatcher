@@ -62,7 +62,16 @@ void Emit_MOV_DwordPtr_R32(char*& address, void* dst, R32 src) {
 }
 
 void Emit_MOV_R32_DwordPtrR32PlusOffset(char*& address, R32 dst, R32 src, int32_t offset) {
-    if (offset >= -128 && offset <= 127) {
+    if (offset == 0 && src != R32::EBP) {
+        int op = 0;
+        op |= (static_cast<int>(src) & 0x7);
+        op |= ((static_cast<int>(dst) & 0x7) << 3);
+        *address++ = static_cast<char>(0x8b);
+        *address++ = static_cast<char>(op);
+        if (src == R32::ESP) {
+            *address++ = static_cast<char>(0x24);
+        }
+    } else if (offset >= -128 && offset <= 127) {
         int op = 0x40;
         op |= (static_cast<int>(src) & 0x7);
         op |= ((static_cast<int>(dst) & 0x7) << 3);
