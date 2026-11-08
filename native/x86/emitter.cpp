@@ -83,7 +83,6 @@ void Emit_MOV_R32_DwordPtrR32PlusOffset(char*& address, R32 dst, R32 src, int32_
         if (src == R32::ESP) {
             *address++ = static_cast<char>(0x24);
         }
-        *address++ = static_cast<char>(offset);
         std::memcpy(address, &offset, 4);
         address += 4;
     }
@@ -111,7 +110,6 @@ void Emit_MOV_DwordPtrR32PlusOffset_R32(char*& address, R32 dst, int32_t offset,
         if (dst == R32::ESP) {
             *address++ = static_cast<char>(0x24);
         }
-        *address++ = static_cast<char>(offset);
         std::memcpy(address, &offset, 4);
         address += 4;
     }
