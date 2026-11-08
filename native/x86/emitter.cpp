@@ -143,6 +143,104 @@ void Emit_MOV_R8_BytePtr(char*& address, R8 dst, void* src) {
     address += 4;
 }
 
+void Emit_MOVZX_R32_BytePtr(char*& address, R32 dst, void* src) {
+    *address++ = static_cast<char>(0x0f);
+    *address++ = static_cast<char>(0xb6);
+    *address++ = static_cast<char>(0x5 | ((static_cast<int>(dst) & 0x7) << 3));
+
+    uint32_t imm32 = reinterpret_cast<uint32_t>(src);
+    std::memcpy(address, &imm32, 4);
+    address += 4;
+}
+
+void Emit_MOVZX_R32_BytePtrR32PlusOffset(char*& address, R32 dst, R32 src, int32_t offset) {
+    if (offset == 0 && src != R32::EBP) {
+        int op = 0;
+        op |= (static_cast<int>(src) & 0x7);
+        op |= ((static_cast<int>(dst) & 0x7) << 3);
+        *address++ = static_cast<char>(0x0f);
+        *address++ = static_cast<char>(0xb6);
+        *address++ = static_cast<char>(op);
+        if (src == R32::ESP) {
+            *address++ = static_cast<char>(0x24);
+        }
+    } else if (offset >= -128 && offset <= 127) {
+        int op = 0x40;
+        op |= (static_cast<int>(src) & 0x7);
+        op |= ((static_cast<int>(dst) & 0x7) << 3);
+
+        *address++ = static_cast<char>(0x0f);
+        *address++ = static_cast<char>(0xb6);
+        *address++ = static_cast<char>(op);
+        if (src == R32::ESP) {
+            *address++ = static_cast<char>(0x24);
+        }
+        *address++ = static_cast<char>(offset);
+    } else {
+        int op = 0x80;
+        op |= (static_cast<int>(src) & 0x7);
+        op |= ((static_cast<int>(dst) & 0x7) << 3);
+
+        *address++ = static_cast<char>(0x0f);
+        *address++ = static_cast<char>(0xb6);
+        *address++ = static_cast<char>(op);
+        if (src == R32::ESP) {
+            *address++ = static_cast<char>(0x24);
+        }
+        std::memcpy(address, &offset, 4);
+        address += 4;
+    }
+}
+
+void Emit_MOVSX_R32_BytePtr(char*& address, R32 dst, void* src) {
+    *address++ = static_cast<char>(0x0f);
+    *address++ = static_cast<char>(0xbe);
+    *address++ = static_cast<char>(0x5 | ((static_cast<int>(dst) & 0x7) << 3));
+
+    uint32_t imm32 = reinterpret_cast<uint32_t>(src);
+    std::memcpy(address, &imm32, 4);
+    address += 4;
+}
+
+void Emit_MOVSX_R32_BytePtrR32PlusOffset(char*& address, R32 dst, R32 src, int32_t offset) {
+    if (offset == 0 && src != R32::EBP) {
+        int op = 0;
+        op |= (static_cast<int>(src) & 0x7);
+        op |= ((static_cast<int>(dst) & 0x7) << 3);
+        *address++ = static_cast<char>(0x0f);
+        *address++ = static_cast<char>(0xbe);
+        *address++ = static_cast<char>(op);
+        if (src == R32::ESP) {
+            *address++ = static_cast<char>(0x24);
+        }
+    } else if (offset >= -128 && offset <= 127) {
+        int op = 0x40;
+        op |= (static_cast<int>(src) & 0x7);
+        op |= ((static_cast<int>(dst) & 0x7) << 3);
+
+        *address++ = static_cast<char>(0x0f);
+        *address++ = static_cast<char>(0xbe);
+        *address++ = static_cast<char>(op);
+        if (src == R32::ESP) {
+            *address++ = static_cast<char>(0x24);
+        }
+        *address++ = static_cast<char>(offset);
+    } else {
+        int op = 0x80;
+        op |= (static_cast<int>(src) & 0x7);
+        op |= ((static_cast<int>(dst) & 0x7) << 3);
+
+        *address++ = static_cast<char>(0x0f);
+        *address++ = static_cast<char>(0xbe);
+        *address++ = static_cast<char>(op);
+        if (src == R32::ESP) {
+            *address++ = static_cast<char>(0x24);
+        }
+        std::memcpy(address, &offset, 4);
+        address += 4;
+    }
+}
+
 void Emit_MOV_BytePtr_R8(char*& address, void* dst, R8 src) {
     if (src == R8::AL) {
         *address++ = static_cast<char>(0xa2);
@@ -188,6 +286,18 @@ void Emit_PUSH_R32(char*& address, R32 reg) {
 
 void Emit_POP_R32(char*& address, R32 reg) {
     int op = 0x58;
+    op |= (static_cast<int>(reg) & 0x7);
+    *address++ = static_cast<char>(op);
+}
+
+void Emit_INC_R32(char*& address, R32 reg) {
+    int op = 0x40;
+    op |= (static_cast<int>(reg) & 0x7);
+    *address++ = static_cast<char>(op);
+}
+
+void Emit_DEC_R32(char*& address, R32 reg) {
+    int op = 0x48;
     op |= (static_cast<int>(reg) & 0x7);
     *address++ = static_cast<char>(op);
 }
