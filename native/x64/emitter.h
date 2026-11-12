@@ -72,6 +72,24 @@ enum class R64 {
     R14 = 14,
     R15 = 15,
 };
+enum class XMM {
+    XMM0 = 0,
+    XMM1 = 1,
+    XMM2 = 2,
+    XMM3 = 3,
+    XMM4 = 4,
+    XMM5 = 5,
+    XMM6 = 6,
+    XMM7 = 7,
+    XMM8 = 8,
+    XMM9 = 9,
+    XMM10 = 10,
+    XMM11 = 11,
+    XMM12 = 12,
+    XMM13 = 13,
+    XMM14 = 14,
+    XMM15 = 15,
+};
 enum class JumpCondition {
     JA = 0x7,
     JAE = 0x3,
@@ -128,6 +146,20 @@ void Emit_XOR_R64_R64(char*& address, R64 dst, R64 src);
 void Emit_ADD_R64_IMM32(char*& address, R64 dst, int32_t imm);
 void Emit_ADC_R64_IMM32(char*& address, R64 dst, int32_t imm);
 void Emit_SUB_R64_IMM32(char*& address, R64 dst, int32_t imm);
+
+void Emit_MOVSS_XMM_XMM(char*& address, XMM dst, XMM src);
+void Emit_MOVSS_XMM_DwordPtrR64(char*& address, XMM dst, R64 src);
+void Emit_MOVSS_DwordPtrR64_XMM(char*& address, R64 dst, XMM src);
+void Emit_ADDSS_XMM_XMM(char*& address, XMM dst, XMM src);
+void Emit_ADDSS_XMM_DwordPtrR64(char*& address, XMM dst, R64 src);
+void Emit_SUBSS_XMM_XMM(char*& address, XMM dst, XMM src);
+void Emit_SUBSS_XMM_DwordPtrR64(char*& address, XMM dst, R64 src);
+void Emit_MULSS_XMM_XMM(char*& address, XMM dst, XMM src);
+void Emit_MULSS_XMM_DwordPtrR64(char*& address, XMM dst, R64 src);
+void Emit_DIVSS_XMM_XMM(char*& address, XMM dst, XMM src);
+void Emit_DIVSS_XMM_DwordPtrR64(char*& address, XMM dst, R64 src);
+void Emit_XORPS_XMM_XMM(char*& address, XMM dst, XMM src);
+void Emit_XORPS_XMM_XmmwordPtrR64(char*& address, XMM dst, R64 src);
 
 struct BranchHelper1Byte {
 public:
